@@ -55,12 +55,12 @@ class DVCircuit():
         state2[self.Qa[1]] = 1
         state2[self.Q2[1]] = 1
 
-        qstate = dq.FockState(  state=[(1/np.sqrt(2), state1), 
+        self.qstate = dq.FockState(  state=[(1/np.sqrt(2), state1), 
                                     (1/np.sqrt(2), state2)], 
                                 basis=False, cutoff=2)
 
-        self.cir = dq.QumodeCircuit(nmode=num_mode, init_state=qstate, 
-                            cutoff=2, backend='fock', basis=False)
+        self.cir = dq.QumodeCircuit(nmode=num_mode, init_state=self.qstate, 
+                            cutoff=4, backend='fock', basis=False)
 
         if not ifnoise:
             sigma = 0
@@ -189,23 +189,6 @@ class DVCircuit():
                         dq.FockState([0,1,0,1,1,0]),
                         dq.FockState([0,1,0,1,0,1])]
         
-        # print(basis)
-        # while True:    
-        #     sample = cir.measure(shots=shots,wires=self.Q1+self.Qa+self.Q2, with_prob=True)
-        #     prob = []
-        #     for w_state in wanted_state:
-        #         try:
-        #             prob.append(sample[w_state][1])
-        #         except:
-        #             prob.append(0)
-        #     prob = np.array(prob)
-        #     prob_sum = np.sum(np.array([prob_pair[1].item() for prob_pair in sample.values()]))
-        #     print(prob_sum)
-        #     if np.isclose(prob_sum, 1):
-        #         return prob / np.sum(prob)
-        #     else:
-        #         shots *= 10
-        
         cir.measure(shots=shots,wires=self.Q1+self.Qa+self.Q2)
 
         # 这里要去修改deepquantum\photonic\circuit.py；1221行下面添加 `self.prob = prob_dict`
@@ -218,7 +201,7 @@ class DVCircuit():
             prob[index] = prob_all[w_state]
 
         return prob / np.sum(prob)
-
+        
     def sampling_all_observable(self, shots):
 
         observable_list = []
