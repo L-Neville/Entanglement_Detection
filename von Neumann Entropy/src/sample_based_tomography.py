@@ -45,7 +45,7 @@ def positive_semi_definite(matrix, tol=1e-8):
 def is_legal(matrix):
     return hermitian(matrix) and trace_one(matrix) and positive_semi_definite(matrix)
 
-def check_legal(matrix, print_errors=True):
+def check_legal(matrix, print_errors=True, name=None, indent=False):
     errors, legal = [], True
     if not hermitian(matrix):
         errors.append('not hermitian')
@@ -56,10 +56,13 @@ def check_legal(matrix, print_errors=True):
     if len(errors) > 0:
         legal = False
     if print_errors:
+        msg = '    ' if indent else ''
+        msg += 'input' if (name is None) else name
+        msg += ' '
         if not legal:
-            print(f'input is not legal: ' + '; '.join(errors))
+            print(msg + '; '.join(errors))
         else: 
-            print('input is a legal density matrix')
+            print(msg + 'is a legal density matrix')
     return legal
         
 def generate_prob_lst(num_states):
@@ -118,7 +121,7 @@ def expct_based_tomography(num_qubtis:int, Pauli_expectations:dict[str, np.float
     '''
     return sum([Pauli(obsv).to_matrix() * expct for obsv, expct in Pauli_expectations.items()]) / 2 ** num_qubtis
 
-def sample_based_tomography(num_qubits:int, samples:dict[str, np.ndarray])->np.ndarray:
+def sample_based_tomography(num_qubits:int, samples:dict[str, np.ndarray], output_expct=False)->np.ndarray:
     '''
     Given probability distribution of all states in every measurement bases,
     return the reconstructed density matrix.
@@ -129,6 +132,8 @@ def sample_based_tomography(num_qubits:int, samples:dict[str, np.ndarray])->np.n
         indices = [i for i in range(len(observable)) if not observable[i] == 'I']
         parities = [(-1) ** (sum([1 for i in indices if state[i] == '1'])) for state in all_states]
         Pauli_expectations[observable] = sum([prob * parity for prob, parity in zip(distribution, parities)])
+    if output_expct:
+        return Pauli_expectations
     return expct_based_tomography(num_qubits, Pauli_expectations)
 
 def generate_Pauli_expectations(num_qubits:int, dm:np.ndarray)->dict[str, np.float32]:
@@ -161,7 +166,22 @@ def generate_distribution(num_qubits:int, dm:np.ndarray)->dict[str, np.ndarray]:
 if __name__ == "__main__":
     num_qubits = 3
     rho = generate_dm(num_qubits, 2 ** num_qubits)
+    print("1. fidelity test:")
     rho1 = expct_based_tomography(num_qubits, generate_Pauli_expectations(num_qubits, rho))
-    print(f"fidelity of expectation based tomography is {get_fidelity(rho, rho1)}")
+    check_legal(rho1, name='rho1', indent=True)
+    print(f"    fidelity of expectation-based tomography: {get_fidelity(rho, rho1)}")
+    print(f"    trace of expectation-based result: {np.trace(rho1)}")
+    print(f"    eigenvalues of expectation-based result: {np.round(np.linalg.eigvals(rho1), 2)}")
     rho2 = sample_based_tomography(num_qubits, generate_distribution(num_qubits, rho))
-    print(f"fidelity of samples based tomography is {get_fidelity(rho, rho2)}")
+    check_legal(rho2, name='rho2', indent=True)
+    print(f"    fidelity of samples-based tomography: {get_fidelity(rho, rho2)}")
+    print(f"    trace of expectation-based result: {np.trace(rho2)}")
+    print(f"    eigenvalues of expectation-based result: {np.round(np.linalg.eigvals(rho2), 2)}")
+    print("2. expectation test:")
+    observables = [''.join(obsv) for obsv in list(itertools.product(*['IXYZ' for _ in range(num_qubits)]))]
+    selected_observables = np.random.choice(observables, 2 ** num_qubits, replace=False)
+    tomography_results = sample_based_tomography(num_qubits, generate_distribution(num_qubits, rho), output_expct=True)
+    for observable in selected_observables:
+        print(f"    observable {observable}: tomography {tomography_results[observable]}, true value {np.trace(rho @ Pauli(observable).to_matrix()).real}")
+        
+        
