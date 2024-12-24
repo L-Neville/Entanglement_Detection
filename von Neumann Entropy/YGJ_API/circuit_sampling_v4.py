@@ -458,15 +458,13 @@ def partial_trace_A(rho_ABC, dim_A, dim_B, dim_C):
 def compute_entropy(rho):
 
     # 计算 rho 的特征值
-    eigenvalues = np.linalg.eigvalsh(rho)
-    eigenvalues = eigenvalues[eigenvalues > 0]
-    entropy = - np.sum(eigenvalues * np.log(eigenvalues))    
+    eigenvalues = eigvals(rho)
 
-    # # 计算 rho 的对数
-    # log_rho = logm(rho)
+    # 计算 rho 的对数
+    log_rho = logm(rho)
 
-    # # 计算 rho 的熵
-    # entropy = -np.trace(np.dot(rho, log_rho))
+    # 计算 rho 的熵
+    entropy = -np.trace(np.dot(rho, log_rho))
 
     return entropy
 
