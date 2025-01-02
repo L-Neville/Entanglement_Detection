@@ -115,11 +115,11 @@ Hadamard = np.array([[1, 1], [1, -1]]) / np.sqrt(2)
 
 Phase = np.array([[1, 0], [0, 1j]], dtype=np.complex128)
 
-def expct_based_tomography(num_qubtis:int, Pauli_expectations:dict[str, np.float32])->np.ndarray:
+def expct_based_tomography(num_qubits:int, Pauli_expectations:dict[str, np.float32])->np.ndarray:
     '''
     Given expectations of all Pauli obervables, return the reconstructed density matrix.
     '''
-    return sum([Pauli(obsv).to_matrix() * expct for obsv, expct in Pauli_expectations.items()]) / 2 ** num_qubtis
+    return sum([Pauli(obsv).to_matrix() * expct for obsv, expct in Pauli_expectations.items()]) / 2 ** num_qubits
 
 def sample_based_tomography(num_qubits:int, samples:dict[str, np.ndarray], output_expct=False)->np.ndarray:
     '''
